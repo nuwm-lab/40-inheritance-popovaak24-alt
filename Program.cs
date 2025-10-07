@@ -1,100 +1,126 @@
 using System;
 
-namespace Lab04
+namespace LB04
 {
     // Одновимірний вектор розмірності 4
     class Vector4
     {
         private double[] elements = new double[4];
 
-        // задавання елементів вектора
-        public void SetElements(double e0, double e1, double e2, double e3)
+        public virtual void ReadFromConsole(string name = "Vector")
         {
-            elements[0] = e0;
-            elements[1] = e1;
-            elements[2] = e2;
-            elements[3] = e3;
+            Console.WriteLine($"Enter 4 elements for {name} (separated by spaces or newlines):");
+            int idx = 0;
+            while (idx < 4)
+            {
+                Console.Write($"Element [{idx}] = ");
+                string? line = Console.ReadLine();
+                if (string.IsNullOrWhiteSpace(line))
+                {
+                    Console.WriteLine("Empty input, try again.");
+                    continue;
+                }
+
+                string[] parts = line.Trim().Split(new[] { ' ', '\t' }, StringSplitOptions.RemoveEmptyEntries);
+                foreach (var p in parts)
+                {
+                    if (idx >= 4) break;
+                    if (double.TryParse(p, out double v))
+                    {
+                        elements[idx++] = v;
+                    }
+                    else
+                    {
+                        Console.WriteLine($"'{p}' is not a valid number. Try again for this element.");
+                    }
+                }
+            }
         }
 
-        // альтернативний спосіб задати з масиву
-        public void SetElements(double[] values)
+        public virtual void Print(string name = "Vector")
         {
-            if (values == null) throw new ArgumentNullException(nameof(values));
-            if (values.Length != 4) throw new ArgumentException("Array must have exactly 4 elements.");
-            Array.Copy(values, elements, 4);
+            Console.WriteLine($"{name}:");
+            Console.WriteLine(string.Join(" ", elements));
         }
 
-        // виведення вектора на екран
-        public virtual void Print()
-        {
-            Console.WriteLine("Vector4: [{0}, {1}, {2}, {3}]", elements[0], elements[1], elements[2], elements[3]);
-        }
-
-        // знаходження максимального елемента
         public virtual double MaxElement()
         {
             double max = elements[0];
-            for (int i = 1; i < 4; i++)
+            for (int i = 1; i < elements.Length; i++)
                 if (elements[i] > max) max = elements[i];
             return max;
         }
 
-        // індексатор для доступу до елементів
-        public double this[int index]
-        {
-            get => elements[index];
-            set => elements[index] = value;
-        }
+        // For potential reuse
+        public double[] Elements => elements;
     }
 
-    // Матриця, похідний від Vector4
-    // Трактуємо матрицю як 4x4, де кожен рядок — це Vector4
-    class Matrix4x4 : Vector4
+    // Похідний клас "матриця" розмірності 4x4
+    class Matrix4 : Vector4
     {
         private double[,] data = new double[4, 4];
 
-        // задавання елементів матриці з 2D масиву
-        public void SetElements(double[,] values)
+        public override void ReadFromConsole(string name = "Matrix")
         {
-            if (values == null) throw new ArgumentNullException(nameof(values));
-            if (values.GetLength(0) != 4 || values.GetLength(1) != 4)
-                throw new ArgumentException("Array must be 4x4.");
-            for (int i = 0; i < 4; i++)
-                for (int j = 0; j < 4; j++)
-                    data[i, j] = values[i, j];
-        }
-
-        // задавання елементів матриці по рядку
-        public void SetRow(int row, Vector4 rowVector)
-        {
-            if (row < 0 || row >= 4) throw new ArgumentOutOfRangeException(nameof(row));
-            for (int j = 0; j < 4; j++) data[row, j] = rowVector[j];
-        }
-
-        // виведення матриці
-        public override void Print()
-        {
-            Console.WriteLine("Matrix 4x4:");
+            Console.WriteLine($"Enter elements for {name} (4 rows, each row with 4 numbers, separated by spaces):");
             for (int i = 0; i < 4; i++)
             {
-                Console.Write("[");
-                for (int j = 0; j < 4; j++)
+                int filled = 0;
+                while (filled < 4)
                 {
-                    Console.Write(data[i, j]);
-                    if (j < 3) Console.Write(", ");
+                    Console.Write($"Row {i}, enter numbers ({filled}/4): ");
+                    string? line = Console.ReadLine();
+                    if (string.IsNullOrWhiteSpace(line))
+                    {
+                        Console.WriteLine("Empty input, try again.");
+                        continue;
+                    }
+                    string[] parts = line.Trim().Split(new[] { ' ', '\t' }, StringSplitOptions.RemoveEmptyEntries);
+                    foreach (var p in parts)
+                    {
+                        if (filled >= 4) break;
+                        if (double.TryParse(p, out double v))
+                        {
+                            data[i, filled++] = v;
+                        }
+                        else
+                        {
+                            Console.WriteLine($"'{p}' is not a valid number. Try again for this position.");
+                        }
+                    }
                 }
-                Console.WriteLine("]");
             }
         }
 
-        // знаходження максимального елемента матриці
+        public override void Print(string name = "Matrix")
+        {
+            Console.WriteLine($"{name}:");
+            for (int i = 0; i < 4; i++)
+            {
+                for (int j = 0; j < 4; j++)
+                    Console.Write(data[i, j] + " ");
+                Console.WriteLine();
+            }
+        }
+
         public override double MaxElement()
         {
-            double max = data[0, 0];
+            double max = data[0,0];
             for (int i = 0; i < 4; i++)
                 for (int j = 0; j < 4; j++)
-                    if (data[i, j] > max) max = data[i, j];
+                    if (data[i,j] > max) max = data[i,j];
             return max;
+        }
+
+        // Optional: expose data as a flattened vector (not required but useful)
+        public double[] Flatten()
+        {
+            double[] flat = new double[16];
+            int k = 0;
+            for (int i = 0; i < 4; i++)
+                for (int j = 0; j < 4; j++)
+                    flat[k++] = data[i,j];
+            return flat;
         }
     }
 
@@ -121,4 +147,3 @@ namespace Lab04
         }
     }
 }
-            
